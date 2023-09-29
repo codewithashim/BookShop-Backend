@@ -4,7 +4,10 @@ import sendResponse from '../../../shared/sendResponse';
 import httpStatus from 'http-status';
 import { IBook, ICategory, Ilevel, ICoupon } from './books.interface';
 import { BookService } from './books.service';
-import { iBookFilterableFields, iBookSearchableFields } from './books.constant';
+import {
+  iBookFilterableFields,
+  iCategoryFilterableFields,
+} from './books.constant';
 import pick from '../../../shared/pick';
 import { paginationFields } from '../../../constants/pagination';
 
@@ -12,6 +15,7 @@ const createBook: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const bookData = req.body;
     const result = await BookService.createBook(bookData);
+
     sendResponse<IBook>(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -35,6 +39,16 @@ const getAllBook = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getBooks = catchAsync(async (req: Request, res: Response) => {
+  const result = await BookService.getBooks();
+  sendResponse<IBook[]>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Books fetched successfully',
+    data: result,
+  });
+});
+
 const getSingelBook = catchAsync(async (req: Request, res: Response) => {
   const bookId = req.params.id;
   const result = await BookService.getSingleBook(bookId);
@@ -48,9 +62,9 @@ const getSingelBook = catchAsync(async (req: Request, res: Response) => {
 
 const updateBook: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const bookId = req.params.id;
+    const id = req.params.id;
     const bookData = req.body;
-    const result = await BookService.updateBook(bookId, bookData);
+    const result = await BookService.updateBook(id, bookData);
     sendResponse<IBook>(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -86,17 +100,21 @@ const createCategory: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
+);
 
 const getAllCategory = catchAsync(async (req: Request, res: Response) => {
-  const result = await BookService.getAllCategory();
+  const filters = pick(req.query, iCategoryFilterableFields);
+  const paginationOptions = pick(req.query, paginationFields);
+  const result = await BookService.getAllCategory(filters, paginationOptions);
+
   sendResponse<ICategory[]>(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Category fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
-})
+});
 
 const getSingelCategory = catchAsync(async (req: Request, res: Response) => {
   const categoryId = req.params.id;
@@ -107,7 +125,7 @@ const getSingelCategory = catchAsync(async (req: Request, res: Response) => {
     message: 'Category fetched successfully',
     data: result,
   });
-})
+});
 
 const updateCategory: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -121,7 +139,7 @@ const updateCategory: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
+);
 
 const deleteCategory: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -134,7 +152,7 @@ const deleteCategory: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
+);
 
 // ====== Level ======
 
@@ -149,7 +167,7 @@ const createLevel: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
+);
 
 const getAllLevel = catchAsync(async (req: Request, res: Response) => {
   const result = await BookService.getAllLevel();
@@ -159,7 +177,7 @@ const getAllLevel = catchAsync(async (req: Request, res: Response) => {
     message: 'Level fetched successfully',
     data: result,
   });
-})
+});
 
 const getSingelLevel = catchAsync(async (req: Request, res: Response) => {
   const levelId = req.params.id;
@@ -170,7 +188,7 @@ const getSingelLevel = catchAsync(async (req: Request, res: Response) => {
     message: 'Level fetched successfully',
     data: result,
   });
-})
+});
 
 const updateLevel: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -197,7 +215,7 @@ const deleteLevel: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
+);
 
 // ====== coupon ======
 
@@ -212,7 +230,7 @@ const createCoupon: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
+);
 
 const getAllCoupon = catchAsync(async (req: Request, res: Response) => {
   const result = await BookService.getAllCoupon();
@@ -222,7 +240,7 @@ const getAllCoupon = catchAsync(async (req: Request, res: Response) => {
     message: 'Coupon fetched successfully',
     data: result,
   });
-})
+});
 
 const getSingelCoupon = catchAsync(async (req: Request, res: Response) => {
   const couponId = req.params.id;
@@ -233,7 +251,7 @@ const getSingelCoupon = catchAsync(async (req: Request, res: Response) => {
     message: 'Coupon fetched successfully',
     data: result,
   });
-})
+});
 
 const updateCoupon: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -249,7 +267,6 @@ const updateCoupon: RequestHandler = catchAsync(
   }
 );
 
-
 const deleteCoupon: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const couponId = req.params.id;
@@ -261,29 +278,7 @@ const deleteCoupon: RequestHandler = catchAsync(
       data: result,
     });
   }
-)
-
-
-//=== add to cart ===
-
-// const addToCart: RequestHandler = catchAsync(
-//   async (req: Request, res: Response) => {
-//     const bookId = req.params.id;
-//     const bookData = req.body;
-//     const result = await BookService.addToCart(bookId, bookData);
-
-
-
-//     sendResponse<IBook>(res, {
-//       statusCode: httpStatus.OK,
-//       success: true,
-//       message: 'Book added to cart successfully!',
-//       data: result,
-//     });
-//   }
-// )
-
-
+);
 
 export const BookController = {
   createBook,
@@ -291,6 +286,7 @@ export const BookController = {
   getSingelBook,
   updateBook,
   deleteBooks,
+  getBooks,
 
   // Category
   createCategory,
@@ -311,7 +307,5 @@ export const BookController = {
   getAllCoupon,
   getSingelCoupon,
   updateCoupon,
-  deleteCoupon
-
-
+  deleteCoupon,
 };

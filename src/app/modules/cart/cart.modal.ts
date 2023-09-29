@@ -12,7 +12,14 @@ const CartSchema = new Schema<ICartItem, CartModel>(
         },
         totalPrice: {
             type: Number,
-        }
+        },
+        email: {
+            type: String,
+        },
+        status: {
+            type: String,
+            default:'unpaid'
+        },
     },
     {
         timestamps: true,

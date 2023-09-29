@@ -8,9 +8,12 @@ router.post(
   BookController.createBook
 );
 router.get('/get-singel-book/:id', BookController.getSingelBook);
-router.patch('/update/:id', BookController.updateBook);
+router.patch('/update-book/:id', BookController.updateBook);
 router.delete('/delete/:id', BookController.deleteBooks);
-router.get('/', BookController.getAllBook);
+router.get('/get-book', BookController.getAllBook);
+router.get('/get-all-book', BookController.getBooks);
+
+
 
 //== Coupon Routes
 router.post('/create-coupon', BookController.createCoupon);

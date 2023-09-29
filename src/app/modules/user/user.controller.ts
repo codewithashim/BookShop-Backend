@@ -56,9 +56,27 @@ const getUserByEmail: RequestHandler = catchAsync(
   }
 );
 
+// == Get admin form the user by email and is admin true  == user.controller.ts 
+
+const getAdminByEmail: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const userEmail = req.params.email;
+    const result: IUser | null = await UserService.getAdminByEmail(userEmail);
+    
+    sendResponse<IUser>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'user fetched successfully!',
+      data: result,
+    });
+  }
+)
+
+
 export const UserController = {
   createUser,
   getAllUsers,
   getUserById,
   getUserByEmail,
+  getAdminByEmail
 };

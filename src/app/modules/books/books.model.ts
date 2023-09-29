@@ -1,11 +1,20 @@
 import { Schema, model } from 'mongoose';
-import { BookModel, IBook, ICategory, Ilevel, ICoupon, CouponModal, CategoryModal, LevelModal } from './books.interface';
+import {
+  BookModel,
+  IBook,
+  ICategory,
+  Ilevel,
+  ICoupon,
+  CouponModal,
+  CategoryModal,
+  LevelModal,
+} from './books.interface';
 
 const categorySchema = new Schema<ICategory, CategoryModal>(
   {
     category: {
       type: String,
-    }
+    },
   },
   {
     timestamps: true,
@@ -13,15 +22,18 @@ const categorySchema = new Schema<ICategory, CategoryModal>(
       virtuals: true,
     },
   }
-)
+);
 
-export const Category = model<ICategory, CategoryModal>('Categories', categorySchema);
+export const Category = model<ICategory, CategoryModal>(
+  'Categories',
+  categorySchema
+);
 
 const levelSchema = new Schema<Ilevel, LevelModal>(
   {
     level: {
       type: String,
-    }
+    },
   },
   {
     timestamps: true,
@@ -29,20 +41,23 @@ const levelSchema = new Schema<Ilevel, LevelModal>(
       virtuals: true,
     },
   }
-)
+);
 
 export const Level = model<Ilevel, LevelModal>('Levels', levelSchema);
 
-const couponSchema = new Schema<ICoupon, CouponModal>(
-  {
-    coupon: {
-      type: String,
-    }
-  }
-)
+const couponSchema = new Schema<ICoupon, CouponModal>({
+  coupon: {
+    type: String,
+  },
+  couponPricePercentage: {
+    type: String,
+  },
+  couponText: {
+    type: String,
+  },
+});
 
 export const Coupon = model<ICoupon, CouponModal>('Coupons', couponSchema);
-
 
 const bookSchema = new Schema<IBook, BookModel>(
   {
@@ -73,7 +88,7 @@ const bookSchema = new Schema<IBook, BookModel>(
     features: [
       {
         type: String,
-      }
+      },
     ],
     author: {
       type: String,
@@ -81,18 +96,20 @@ const bookSchema = new Schema<IBook, BookModel>(
     coupon: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Coupons'
-      }
+        ref: 'Coupons',
+      },
     ],
     image: [
       {
         type: String,
-      }
+      },
     ],
     category: {
-      type: Schema.Types.ObjectId,
-      ref: 'Categories'
-    }
+      type: String,
+    },
+    categoryIds: {
+      type: String,
+    },
   },
   {
     timestamps: true,

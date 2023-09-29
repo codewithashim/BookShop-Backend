@@ -10,8 +10,8 @@ import { CartService } from './cart.service';
 const addToCart: RequestHandler = catchAsync(
     async (req: Request, res: Response) => {
         const bookId = req.params.id;
-        const { quantity } = req.body;
-        const result = await CartService.addToCart(bookId, quantity);
+        const { ...cartData } = req.body;
+        const result = await CartService.addToCart(bookId, cartData);
         sendResponse<ICartItem>(res, {
             statusCode: httpStatus.OK,
             success: true,
@@ -36,6 +36,24 @@ const getCart: RequestHandler = catchAsync(
     }
 )
 
+// get card by user email . cart.controller.ts
+
+const getCartByUserEmail: RequestHandler = catchAsync(
+    async (req: Request, res: Response) => {
+        const { email } = req.params
+
+        const result = await CartService.getCartByUserEmail(email);
+
+        sendResponse<ICartItem[]>(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Cart fetched successfully!',
+            data: result,
+        });
+    }
+)
+
+
 // remove from cart function . cart.controller.ts
 
 const removeFromCart: RequestHandler = catchAsync(
@@ -51,11 +69,29 @@ const removeFromCart: RequestHandler = catchAsync(
     }
 )
 
+// update cart function . cart.controller.ts
+
+const updateCart: RequestHandler = catchAsync(
+    async (req: Request, res: Response) => {
+        const bookId = req.params.id;
+        const { ...cartData } = req.body;
+        const result = await CartService.updateCart(bookId, cartData);
+        sendResponse<ICartItem>(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Cart updated successfully!',
+            data: result,
+        });
+    }
+)
+
 
 export const CartController = {
     addToCart,
     getCart,
     removeFromCart,
+    getCartByUserEmail,
+    updateCart
 
 }
 

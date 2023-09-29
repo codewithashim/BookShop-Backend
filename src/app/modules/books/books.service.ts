@@ -5,13 +5,19 @@ import { paginationHelpers } from '../../../helpers/paginationHelper';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { iBookSearchableFields } from './books.constant';
-import { IBook, IBooksFilters, ICategory, ICoupon, Ilevel } from './books.interface';
+import {
+  IBook,
+  IBooksFilters,
+  ICategory,
+  ICategoryFilters,
+  ICoupon,
+  Ilevel,
+} from './books.interface';
 import { Book, Category, Coupon, Level } from './books.model';
 
 const createBook = async (payload: IBook): Promise<IBook> => {
   try {
-    const book = new Book(payload);
-    await book.save();
+    const book = await Book.create(payload);
     return book;
   } catch (error) {
     throw new ApiError(
@@ -59,7 +65,10 @@ const getAllBook = async (
   const whereConditions =
     andConditions.length > 0 ? { $and: andConditions } : {};
 
-  const result = await Book.find(whereConditions).populate('category').populate('level').populate('coupon')
+  const result = await Book.find(whereConditions)
+    .populate('category')
+    .populate('level')
+    .populate('coupon')
     .sort(sortConditions)
     .skip(skip);
 
@@ -68,8 +77,19 @@ const getAllBook = async (
   };
 };
 
+const getBooks = async (): Promise<IBook[]> => {
+  const result = await Book.find()
+    .populate('category')
+    .populate('level')
+    .populate('coupon');
+  return result;
+};
+
 const getSingleBook = async (bookId: string): Promise<IBook> => {
-  const book = await Book.findById(bookId).populate('category').populate('level').populate('coupon');
+  const book = await Book.findById(bookId)
+    .populate('category')
+    .populate('level')
+    .populate('coupon');
   if (!book) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Book not found');
   }
@@ -80,11 +100,53 @@ const updateBook = async (
   id: string,
   payload: Partial<IBook>
 ): Promise<IBook | null> => {
-  const result = await Book.findOneAndUpdate({ _id: id }, payload, {
-    new: true,
-  });
-  return result;
+  try {
+    const result = await Book.findByIdAndUpdate(id, payload, { new: true });
+    return result;
+    
+  } catch (error) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Internal Server Error'
+    );
+  }
 };
+
+// const updateBook = async (
+//   id: string,
+//   payload: Partial<IBook>
+// ): Promise<IBook | null> => {
+//   if (payload.coupon) {
+//     if (Array.isArray(payload.coupon)) {
+//       payload.coupon = payload.coupon.filter(coupon => !!coupon).join(', ');
+//     } else if (typeof payload.coupon === 'string') {
+//       // If it's already a string, do nothing
+//     }
+//   }
+
+//   if (payload.image) {
+//     if (Array.isArray(payload.image)) {
+//       payload.image = payload.image.filter(image => !!image).join(', ');
+//     } else if (typeof payload.image === 'string') {
+//       // If it's already a string, do nothing
+//     }
+//   }
+
+//   if (payload.features) {
+//     if (Array.isArray(payload.features)) {
+//       payload.features = payload.features
+//         .filter(features => !!features)
+//         .join(', ');
+//     } else if (typeof payload.features === 'string') {
+//       // If it's already a string, do nothing
+//     }
+//   }
+
+//   const result = await Book.findOneAndUpdate({ _id: id }, payload, {
+//     new: true,
+//   });
+//   return result;
+// };
 
 const deleteBook = async (id: string): Promise<IBook | null> => {
   const result = await Book.findByIdAndDelete(id);
@@ -106,10 +168,52 @@ const createCategory = async (payload: ICategory): Promise<ICategory> => {
   }
 };
 
-const getAllCategory = async (): Promise<ICategory[]> => {
+const getAllCategory = async (
+  filters: ICategoryFilters,
+  paginationOptions: IPaginationOptions
+): Promise<IGenericResponse<ICategory[]>> => {
   try {
-    const result = await Category.find();
-    return result;
+    const { skip, sortBy, sortOrder } =
+      paginationHelpers.calculatePagination(paginationOptions);
+
+    const { searchTerm, ...filtersData } = filters;
+
+    const andConditions = [];
+
+    if (searchTerm) {
+      andConditions.push({
+        $or: iBookSearchableFields.map(field => ({
+          [field]: {
+            $regex: searchTerm,
+            $options: 'i',
+          },
+        })),
+      });
+    }
+
+    if (Object.keys(filtersData).length) {
+      andConditions.push({
+        $and: Object.entries(filtersData).map(([field, value]) => ({
+          [field]: value,
+        })),
+      });
+    }
+
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+      sortConditions[sortBy] = sortOrder;
+    }
+    const whereConditions =
+      andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.find(whereConditions)
+      .sort(sortConditions)
+      .skip(skip);
+
+    return {
+      data: result,
+    };
   } catch (error) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
@@ -133,20 +237,22 @@ const getSingleCategory = async (categoryId: string): Promise<ICategory> => {
   }
 };
 
-const updateCategory = async (id: string, payload: Partial<ICategory>): Promise<ICategory | null> => {
+const updateCategory = async (
+  id: string,
+  payload: Partial<ICategory>
+): Promise<ICategory | null> => {
   try {
     const result = await Category.findOneAndUpdate({ _id: id }, payload, {
       new: true,
     });
     return result;
-
   } catch (error) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       'Internal Server Error'
     );
   }
-}
+};
 
 const deleteCategory = async (id: string): Promise<ICategory | null> => {
   try {
@@ -158,7 +264,7 @@ const deleteCategory = async (id: string): Promise<ICategory | null> => {
       'Internal Server Error'
     );
   }
-}
+};
 
 // ====== Level ======
 
@@ -185,7 +291,7 @@ const getAllLevel = async (): Promise<Ilevel[]> => {
       'Internal Server Error'
     );
   }
-}
+};
 
 const getSingleLevel = async (levelId: string): Promise<Ilevel> => {
   try {
@@ -200,23 +306,24 @@ const getSingleLevel = async (levelId: string): Promise<Ilevel> => {
       'Internal Server Error'
     );
   }
-}
+};
 
-const updateLevel = async (id: string, payload: Partial<Ilevel>): Promise<Ilevel | null> => {
+const updateLevel = async (
+  id: string,
+  payload: Partial<Ilevel>
+): Promise<Ilevel | null> => {
   try {
     const result = await Level.findOneAndUpdate({ _id: id }, payload, {
       new: true,
     });
     return result;
-
-
   } catch (error) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       'Internal Server Error'
     );
   }
-}
+};
 
 const deleteLevel = async (id: string): Promise<Ilevel | null> => {
   try {
@@ -228,7 +335,7 @@ const deleteLevel = async (id: string): Promise<Ilevel | null> => {
       'Internal Server Error'
     );
   }
-}
+};
 
 // ====== Coupon ======
 
@@ -243,7 +350,7 @@ const createCoupon = async (payload: ICoupon): Promise<ICoupon> => {
       'Internal Server Error'
     );
   }
-}
+};
 
 const getAllCoupon = async (): Promise<ICoupon[]> => {
   try {
@@ -255,7 +362,7 @@ const getAllCoupon = async (): Promise<ICoupon[]> => {
       'Internal Server Error'
     );
   }
-}
+};
 
 const getSingleCoupon = async (couponId: string): Promise<ICoupon> => {
   try {
@@ -270,22 +377,24 @@ const getSingleCoupon = async (couponId: string): Promise<ICoupon> => {
       'Internal Server Error'
     );
   }
-}
+};
 
-const updateCoupon = async (id: string, payload: Partial<ICoupon>): Promise<ICoupon | null> => {
+const updateCoupon = async (
+  id: string,
+  payload: Partial<ICoupon>
+): Promise<ICoupon | null> => {
   try {
     const result = await Coupon.findOneAndUpdate({ _id: id }, payload, {
       new: true,
     });
     return result;
-
   } catch (error) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       'Internal Server Error'
     );
   }
-}
+};
 
 const deleteCoupon = async (id: string): Promise<ICoupon | null> => {
   try {
@@ -297,24 +406,7 @@ const deleteCoupon = async (id: string): Promise<ICoupon | null> => {
       'Internal Server Error'
     );
   }
-}
-
-// ====== Add to Cart ======
-
-// const addToCart = async (payload: ICart): Promise<ICart> => {
-//   try {
-//     const Cart = new Cart(payload);
-//     await Cart.save();
-//     return Cart;
-//   } catch (error) {
-//     throw new ApiError(
-//       httpStatus.INTERNAL_SERVER_ERROR,
-//       'Internal Server Error'
-//     );
-//   }
-// }
-
-
+};
 
 export const BookService = {
   createBook,
@@ -322,6 +414,7 @@ export const BookService = {
   getSingleBook,
   updateBook,
   deleteBook,
+  getBooks,
 
   //== Category==
 
@@ -346,5 +439,4 @@ export const BookService = {
   deleteCoupon,
 
   // == Add to Cart ==
-
 };

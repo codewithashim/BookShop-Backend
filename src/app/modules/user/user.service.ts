@@ -52,9 +52,45 @@ const getUserByEmail = async (email: string): Promise<IUser | null> => {
   }
 };
 
+// == Get admin form the user by email and is admin true  == user.service.ts
+
+interface IUserWithAdmin extends IUser {
+  isAdmin: boolean;
+}
+
+const getAdminByEmail = async (email: string): Promise<IUserWithAdmin | null> => {
+  interface IUserWithAdmin extends IUser {
+    isAdmin: boolean;
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return null;
+    }
+
+    const isAdmin = user.get('isAdmin');
+
+    interface IUserWithAdmin extends IUser {
+      isAdmin: boolean;
+    }
+
+    const userWithAdmin: IUserWithAdmin = { ...user.toObject(), isAdmin };
+
+    return userWithAdmin;
+  } catch (error) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Internal Server Error'
+    );
+  }
+}
+
 export const UserService = {
   createUser,
   getAllUser,
   getUserById,
   getUserByEmail,
-};
+  getAdminByEmail,
+}
